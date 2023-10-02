@@ -1,7 +1,16 @@
+import getProducts, { IProductParams } from "@/src/actions/getProducts";
+import ProductTable from "@/src/components/ProductTable";
 import Link from "next/link";
 import React from "react";
 
-const Products = async () => {
+interface HomeProps {
+  searchParams: IProductParams;
+}
+
+const Products = async ({ searchParams }: HomeProps) => {
+  const products = await getProducts(searchParams);
+  console.log(products);
+
   return (
     <>
       <div className="w-full flex justify-between items-center ">
@@ -15,7 +24,7 @@ const Products = async () => {
       </div>
       <div>
         product table
-        {/* <ProductTable /> */}
+        <ProductTable />
       </div>
     </>
   );
