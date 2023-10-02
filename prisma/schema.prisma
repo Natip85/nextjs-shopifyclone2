@@ -47,12 +47,12 @@ model Product {
   title String
   description String
   price Float
-  quantity Int
+  quantity String
   shipping Boolean
-  weight Int
+  weight String
   weightMeasurement String
   productStatus String
-  images Image[]
+  images Json[]
   reviews Review[]
 }
 
