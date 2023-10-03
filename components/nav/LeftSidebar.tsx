@@ -44,7 +44,9 @@ const LeftSidebar = ({ currentUser }: LeftSidebarProps) => {
         <div className="mt-10 px-6">
           <button
             className="flex cursor-pointer gap-4 p-4"
-            onClick={() => signOut()}
+            onClick={() => {
+              signOut();
+            }}
           >
             <Image
               src="/assets/logout.svg"

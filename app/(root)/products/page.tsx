@@ -1,15 +1,11 @@
-import getProducts, { IProductParams } from "@/src/actions/getProducts";
 import ProductTable from "@/src/components/ProductTable";
 import Link from "next/link";
 import React from "react";
+import { columns } from "./columns";
+import getProducts from "@/src/actions/getProducts";
 
-interface HomeProps {
-  searchParams: IProductParams;
-}
-
-const Products = async ({ searchParams }: HomeProps) => {
-  const products = await getProducts(searchParams);
-  console.log(products);
+const Products = async () => {
+  const allProducts = await getProducts();
 
   return (
     <>
@@ -23,8 +19,7 @@ const Products = async ({ searchParams }: HomeProps) => {
         </Link>
       </div>
       <div>
-        product table
-        <ProductTable />
+        <ProductTable columns={columns} data={allProducts} />
       </div>
     </>
   );

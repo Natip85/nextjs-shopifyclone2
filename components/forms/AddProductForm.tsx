@@ -17,6 +17,20 @@ import { useRouter } from "next/navigation";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { Checkbox } from "@/src/@/components/ui/checkbox";
+
+export interface ProductType {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  quantity: number;
+  shipping: boolean;
+  weight: number;
+  weightMeasurment?: string;
+  images: any;
+  productStatus: string;
+}
 
 const AddProductForm = () => {
   const router = useRouter();
@@ -41,9 +55,9 @@ const AddProductForm = () => {
     defaultValues: {
       title: "",
       description: "",
-      price: "",
-      quantity: "",
-      weight: "",
+      price: 0,
+      quantity: 0,
+      weight: 0,
       shipping: shipping,
       weightMeasurement: "",
       productStatus: "",
@@ -181,11 +195,10 @@ const AddProductForm = () => {
             htmlFor="shipping-select"
             className="text-xs flex items-center text-slate-800 cursor-pointer"
           >
-            <input
-              type="checkbox"
+            <Checkbox
               {...register("shipping")}
-              onChange={() => setShipping(!shipping)}
-              className="mr-2 flex items-center w-6 h-6"
+              onCheckedChange={() => setShipping(!shipping)}
+              className="mr-2"
               id="shipping-select"
             />
             This product requires shipping

@@ -47,9 +47,9 @@ model Product {
   title String
   description String
   price Float
-  quantity String
+  quantity BigInt
   shipping Boolean
-  weight String
+  weight Int
   weightMeasurement String
   productStatus String
   images Json[]
