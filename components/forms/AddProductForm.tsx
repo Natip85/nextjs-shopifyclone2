@@ -17,7 +17,12 @@ import { useRouter } from "next/navigation";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Checkbox } from "@/src/@/components/ui/checkbox";
+import {
+  createProductSchema,
+  createProductSchemaType,
+} from "@/src/validation/createProduct";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ZodError } from "zod";
 
 export interface ProductType {
   id: string;
@@ -51,14 +56,15 @@ const AddProductForm = () => {
     watch,
     reset,
     formState: { errors },
-  } = useForm<FieldValues>({
+  } = useForm<createProductSchemaType>({
+    resolver: zodResolver(createProductSchema),
     defaultValues: {
       title: "",
       description: "",
       price: 0,
       quantity: 0,
-      weight: 0,
-      shipping: shipping,
+      // weight: 0,
+      // shipping: shipping,
       weightMeasurement: "",
       productStatus: "",
     },
@@ -69,7 +75,8 @@ const AddProductForm = () => {
     setValue("productStatus", "draft");
   }, [setValue]);
 
-  const onSubmit: SubmitHandler<FieldValues> = async (data) => {
+  const onSubmit = async (data: createProductSchemaType) => {
+    console.log("onSubmit called");
     const productData = { ...data, images: uploadedFiles };
 
     axios
@@ -79,7 +86,13 @@ const AddProductForm = () => {
         router.refresh();
       })
       .catch((error) => {
-        toast.error("Something went wrong when creating a product");
+        console.error("Error making the request:", error);
+        if (error instanceof ZodError) {
+          error.issues.forEach((validationError) => {
+            toast.error(validationError.message);
+          });
+          toast.error("Something went wrong when creating a product");
+        }
       })
       .finally(() => {});
   };
@@ -92,7 +105,7 @@ const AddProductForm = () => {
     if (confirmed) router.back();
   };
   return (
-    <div className="flex flex-col sm:flex-row">
+    <div className="flex flex-col md:flex-row">
       <div className="w-full">
         <div className="bg-white p-3 rounded-md flex flex-col w-full shadow-lg mb-5 border border-stone-300">
           <label htmlFor="title" className="text-sm text-black">
@@ -101,7 +114,7 @@ const AddProductForm = () => {
           <Input
             id="title"
             {...register("title")}
-            className="my-2 rounded-md border p-1 pl-3 text-sm focus:border-blue-800 focus:border-[3px] hover:bg-slate-100 bg-white dark:text-black"
+            className="my-2 rounded-md text-sm hover:bg-slate-100 bg-white"
           />
           <label htmlFor="" className="text-sm text-black">
             Description
@@ -110,7 +123,7 @@ const AddProductForm = () => {
             {...register("description")}
             cols={10}
             rows={10}
-            className="hover:bg-slate-100 focus:bg-slate-100 focus:border-blue-800 focus:border-[3px] text-black"
+            className="my-2 hover:bg-slate-100"
           />
         </div>
         <div className="bg-white p-3 rounded-md flex flex-col w-full shadow-lg mb-5 border border-stone-300">
@@ -170,7 +183,7 @@ const AddProductForm = () => {
             {...register("price")}
             type="number"
             placeholder="$ 0.00"
-            className="sm:w-fit my-2 rounded-md border p-1 pl-3 text-sm focus:border-blue-800 focus:border-[3px] hover:bg-slate-100 bg-white dark:text-black"
+            className="sm:w-fit my-2 rounded-md hover:bg-slate-100"
           />
         </div>
         <div className="bg-white p-3 rounded-md flex flex-col w-full shadow-lg mb-5 border border-stone-300">
@@ -184,7 +197,7 @@ const AddProductForm = () => {
             {...register("quantity")}
             type="number"
             placeholder="0"
-            className="sm:w-fit my-2 rounded-md border p-1 pl-3 text-sm focus:border-blue-800 focus:border-[3px] hover:bg-slate-100 bg-white dark:text-black"
+            className="sm:w-fit my-2 rounded-md hover:bg-slate-100"
           />
         </div>
         <div className="bg-white p-3 rounded-md flex flex-col w-full shadow-lg border border-stone-300">
@@ -192,17 +205,19 @@ const AddProductForm = () => {
             Shipping
           </label>
           <label
-            htmlFor="shipping-select"
+            htmlFor="shipping"
             className="text-xs flex items-center text-slate-800 cursor-pointer"
           >
-            <Checkbox
+            <input
               {...register("shipping")}
-              onCheckedChange={() => setShipping(!shipping)}
+              type="checkbox"
+              onChange={() => setShipping(!shipping)}
               className="mr-2"
-              id="shipping-select"
+              id="shipping"
             />
             This product requires shipping
           </label>
+
           {shipping && (
             <>
               <label htmlFor="" className="text-xs text-slate-800 mt-5">
@@ -213,7 +228,7 @@ const AddProductForm = () => {
                   {...register("weight")}
                   type="number"
                   placeholder="0"
-                  className="sm:w-fit my-2 rounded-md border p-1 pl-3 text-sm focus:ring-4 focus:ring-blue-800 focus:bg-slate-100 hover:bg-slate-100 bg-white dark:text-black"
+                  className="sm:w-fit my-2 rounded-md hover:bg-slate-100"
                 />
                 <div className="ml-5">
                   <Select
@@ -224,17 +239,17 @@ const AddProductForm = () => {
                       <SelectValue placeholder="lb" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectGroup className="w-[100px] p-2">
-                        <SelectItem className="cursor-pointer mb-2" value="lb">
+                      <SelectGroup>
+                        <SelectItem className="cursor-pointer" value="lb">
                           lb
                         </SelectItem>
-                        <SelectItem className="cursor-pointer mb-2" value="oz">
+                        <SelectItem className="cursor-pointer" value="oz">
                           oz
                         </SelectItem>
-                        <SelectItem className="cursor-pointer mb-2" value="kg">
+                        <SelectItem className="cursor-pointer" value="kg">
                           kg
                         </SelectItem>
-                        <SelectItem className="cursor-pointer mb-2" value="g">
+                        <SelectItem className="cursor-pointer" value="g">
                           g
                         </SelectItem>
                       </SelectGroup>
@@ -260,7 +275,7 @@ const AddProductForm = () => {
           </Button>
         </div>
       </div>
-      <div className="bg-white ml-3 mt-5 p-3 rounded-md flex flex-col shadow-lg mb-5 border border-stone-300 sm:mt-0">
+      <div className="bg-white ml-3 p-3 rounded-md flex flex-col shadow-lg border mt-5 border-stone-300 sm:mt-5 md:mt-0">
         <label htmlFor="" className="text-black">
           Status
         </label>
@@ -269,15 +284,15 @@ const AddProductForm = () => {
             {...register("productStatus")}
             onValueChange={(e) => setValue("productStatus", e)}
           >
-            <SelectTrigger className="w-[200px] dark:text-black">
+            <SelectTrigger>
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectGroup className="w-[100px] p-2">
-                <SelectItem value="active" className="cursor-pointer mb-2">
+              <SelectGroup>
+                <SelectItem value="active" className="cursor-pointer">
                   Active
                 </SelectItem>
-                <SelectItem value="draft" className="cursor-pointer mb-2">
+                <SelectItem value="draft" className="cursor-pointer">
                   Draft
                 </SelectItem>
               </SelectGroup>

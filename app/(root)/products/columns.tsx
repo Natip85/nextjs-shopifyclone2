@@ -12,8 +12,34 @@ import {
   DropdownMenuTrigger,
 } from "@/src/@/components/ui/dropdown-menu";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { Checkbox } from "@/src/@/components/ui/checkbox";
 
 export const columns: ColumnDef<ProductType>[] = [
+  {
+    id: "select",
+    header: ({ table }) => {
+      return (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => {
+            table.toggleAllPageRowsSelected(!!value);
+          }}
+        />
+      );
+    },
+    cell: ({ row }) => {
+      return (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => {
+            row.toggleSelected(!!value);
+          }}
+        />
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     header: ({ column }) => {
       return (

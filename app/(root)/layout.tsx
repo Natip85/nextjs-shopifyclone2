@@ -23,14 +23,14 @@ export default async function RootLayout({
   const currentUser = await getCurrentUser();
   return (
     <html lang="en">
-      <body className="bg-stone-100 dark:bg-[#030303]">
+      <body className="bg-stone-100">
         <AuthContext>
           <ToasterContext />
           <TopBar />
           <main className="flex flex-row">
             <LeftSidebar currentUser={currentUser} />
             <section className="flex min-h-screen flex-1 flex-col items-center px-6 pb-10 pt-28 max-md:pb-32 sm:px-10">
-              <div className="w-full max-w-4xl">{children}</div>
+              <div className="w-full max-w-5xl">{children}</div>
             </section>
           </main>
           <Bottombar />
