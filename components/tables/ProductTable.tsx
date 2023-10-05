@@ -22,14 +22,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/@/components/ui/table";
-import { Input } from "../@/components/ui/input";
+import { Input } from "../../@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/src/@/components/ui/dropdown-menu";
-import { downloadToExcel } from "../app/api/product/xlsx";
+import { downloadToExcel } from "../../app/api/product/xlsx";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -77,35 +77,43 @@ function ProductTable<TData, TValue>({
           }}
           className="max-w-sm"
         />
-        <Button onClick={() => downloadToExcel(data)} className="ml-4">
+        <Button
+          onClick={() => downloadToExcel(data)}
+          className="ml-4 h-fit text-sm text-white py-1 px-3 bg-black "
+        >
           Export to Excel
         </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant={"outline"} className="ml-4">
-              Columns
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value: boolean) => {
-                      column.toggleVisibility(!!value);
-                    }}
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="ml-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={"outline"}
+                className="ml-4 h-fit text-sm py-1 px-3"
+              >
+                Columns
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value: boolean) => {
+                        column.toggleVisibility(!!value);
+                      }}
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       {/* table */}
       <div className="rounded-lg border bg-white">
@@ -133,7 +141,7 @@ function ProductTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="px-3 py-1">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

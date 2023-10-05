@@ -1,4 +1,4 @@
-import ProductTable from "@/src/components/ProductTable";
+import ProductTable from "@/src/components/tables/ProductTable";
 import Link from "next/link";
 import React from "react";
 import { columns } from "./columns";
@@ -13,7 +13,7 @@ const Products = async () => {
         <h1 className="font-bold text-xl ">Products</h1>
         <Link
           href={"/products/addProduct"}
-          className="h-fit text-xs text-white py-1 px-3 bg-black rounded-lg"
+          className="h-fit text-sm text-white py-1 px-3 bg-black rounded-lg"
         >
           Add product
         </Link>

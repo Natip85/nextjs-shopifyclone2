@@ -6,6 +6,7 @@ export function downloadToExcel(data: any) {
       sheet: "Products",
       columns: [
         { label: "Product ID", value: "id" },
+        { label: "Product Image", value: "images" },
         { label: "Product Name", value: "title" },
         { label: "Product Status", value: "productStatus" },
         { label: "Product Inventory", value: "quantity" },

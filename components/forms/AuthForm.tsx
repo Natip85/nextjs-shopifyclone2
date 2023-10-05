@@ -6,9 +6,9 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Input from "./inputs/Input";
-import Button from "./buttons/Button";
-import AuthSocialButton from "./buttons/AuthSocialButton";
+import Input from "../inputs/Input";
+import Button from "../buttons/Button";
+import AuthSocialButton from "../buttons/AuthSocialButton";
 
 type Variant = "LOGIN" | "REGISTER";
 

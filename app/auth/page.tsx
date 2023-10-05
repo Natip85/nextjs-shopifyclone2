@@ -1,4 +1,4 @@
-import AuthForm from "@/src/components/AuthForm";
+import AuthForm from "@/src/components/forms/AuthForm";
 import Image from "next/image";
 import React from "react";
 
