@@ -1,7 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { Textarea } from "@/src/@/components/ui/textarea";
 import { Button } from "@/src/@/components/ui/button";
+import { Input } from "@/src/@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -10,38 +9,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/@/components/ui/select";
-import { Input } from "@/src/@/components/ui/input";
-import Image from "next/image";
-import { useDropzone } from "react-dropzone";
-import { useRouter } from "next/navigation";
-import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
-import axios from "axios";
-import toast from "react-hot-toast";
+import { Textarea } from "@/src/@/components/ui/textarea";
 import {
   createProductSchema,
   createProductSchemaType,
 } from "@/src/validation/createProduct";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ZodError } from "zod";
+import { Product } from "@prisma/client";
+import axios from "axios";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
 import { categories } from "@/src/constants/Categories";
-
-export interface ProductType {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  quantity: number;
-  shipping: boolean;
-  weight: number;
-  weightMeasurment?: string;
-  images: any;
-  productStatus: string;
-  category: string;
+export interface EditProductFormProps {
+  product: Product;
 }
-
-const AddProductForm = () => {
+const EditProductForm = ({ product }: EditProductFormProps) => {
   const router = useRouter();
-  const [shipping, setShipping] = useState(false);
+  const [shipping, setShipping] = useState(product.shipping);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   const { acceptedFiles, getRootProps, getInputProps } = useDropzone({
@@ -60,45 +48,33 @@ const AddProductForm = () => {
     formState: { errors },
   } = useForm<createProductSchemaType>({
     resolver: zodResolver(createProductSchema),
-    // defaultValues: {
-    //   title: "",
-    //   description: "",
-    //   price: 0,
-    //   quantity: 0,
-    //   // weight: 0,
-    //   // shipping: shipping,
-    //   weightMeasurement: "",
-    //   productStatus: "",
-    // },
+    defaultValues: {
+      title: product.title,
+      description: product.description,
+      price: product.price,
+      quantity: product.quantity,
+      weight: product.weight !== null ? product.weight : undefined,
+      shipping: shipping,
+      weightMeasurement: product.weightMeasurement,
+      productStatus: product.productStatus,
+      category: product.category,
+    },
   });
-
-  useEffect(() => {
-    setValue("weightMeasurement", "lb");
-    setValue("productStatus", "draft");
-  }, [setValue]);
-
   const onSubmit = async (data: createProductSchemaType) => {
-    console.log("onSubmit called");
-    const productData = { ...data, images: uploadedFiles };
+    console.log(data);
+    const productData = { ...data, images: uploadedFiles, id: product.id };
 
     axios
-      .post("/api/product", productData)
+      .put("/api/product", productData)
       .then(() => {
-        toast.success("Product created");
+        toast.success("Product edited");
         router.refresh();
       })
       .catch((error) => {
-        console.error("Error making the request:", error);
-        if (error instanceof ZodError) {
-          error.issues.forEach((validationError) => {
-            toast.error(validationError.message);
-          });
-          toast.error("Something went wrong when creating a product");
-        }
+        toast.error("Something went wrong when editing the product");
       })
       .finally(() => {});
   };
-
   const handleDiscard = () => {
     const confirmed = window.confirm(
       "Are you sure you want to proceed? confirming will delete all unsaved changes."
@@ -213,9 +189,10 @@ const AddProductForm = () => {
             >
               <input
                 {...register("shipping")}
+                checked={shipping}
                 type="checkbox"
                 onChange={() => setShipping(!shipping)}
-                className="mr-2"
+                className="mr-2 hover:cursor-pointer"
                 id="shipping"
               />
               This product requires shipping
@@ -239,7 +216,7 @@ const AddProductForm = () => {
                       onValueChange={(e) => setValue("weightMeasurement", e)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="lb" />
+                        <SelectValue placeholder={product.weightMeasurement} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
@@ -272,10 +249,11 @@ const AddProductForm = () => {
             <div className="mt-5">
               <Select
                 {...register("productStatus")}
+                defaultValue={product.productStatus}
                 onValueChange={(e) => setValue("productStatus", e)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder={product.productStatus} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -300,7 +278,7 @@ const AddProductForm = () => {
                 onValueChange={(e) => setValue("category", e)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
+                  <SelectValue placeholder={product.category} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -338,4 +316,4 @@ const AddProductForm = () => {
   );
 };
 
-export default AddProductForm;
+export default EditProductForm;

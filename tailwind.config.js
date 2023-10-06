@@ -17,6 +17,9 @@ module.exports = {
       },
     },
     extend: {
+      colors: {
+        glassmorphism: "rgba(16, 16, 18, 0.60)",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: 0 },

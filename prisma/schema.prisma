@@ -47,12 +47,14 @@ model Product {
   title String
   description String
   price Float
-  quantity BigInt
+  quantity Int
   shipping Boolean
-  weight Int
+  weight Int?
   weightMeasurement String
   productStatus String
-  images Json[]
+  category String
+  createdDate     DateTime  @default(now())
+  images Json[] 
   reviews Review[]
 }
 
@@ -98,7 +100,7 @@ type CartProduct{
   id String
   name String
   description String
-  // category String
+  category String
   // brand String
   quantity Int
   price Float

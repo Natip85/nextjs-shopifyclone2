@@ -68,27 +68,27 @@ function ProductTable<TData, TValue>({
   return (
     <div>
       {/* input */}
-      <div className="flex items-center py-4">
+      <div className="flex flex-col py-4 sm:flex-row">
         <Input
           placeholder="Filter Products"
           value={(table.getColumn("id")?.getFilterValue() as string) || ""}
           onChange={(e) => {
             table.getColumn("id")?.setFilterValue(e.target.value);
           }}
-          className="max-w-sm"
+          className="max-w-sm mb-3"
         />
         <Button
           onClick={() => downloadToExcel(data)}
-          className="ml-4 h-fit text-sm text-white py-1 px-3 bg-black "
+          className="sm:ml-4 h-fit w-fit text-sm text-white py-1 px-3 bg-black mb-3"
         >
           Export to Excel
         </Button>
-        <div className="ml-auto">
+        <div className="sm:ml-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant={"outline"}
-                className="ml-4 h-fit text-sm py-1 px-3"
+                className="sm:ml-4 h-fit text-sm py-1 px-3"
               >
                 Columns
               </Button>
@@ -116,7 +116,7 @@ function ProductTable<TData, TValue>({
         </div>
       </div>
       {/* table */}
-      <div className="rounded-lg border bg-white">
+      <div className="rounded-lg border max-w-[350px] sm:max-w-full md:max-w-full">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => {

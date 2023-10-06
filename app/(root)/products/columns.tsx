@@ -13,8 +13,9 @@ import { ArrowUpDown, MoreHorizontal, EyeIcon } from "lucide-react";
 import { Checkbox } from "@/src/@/components/ui/checkbox";
 import Image from "next/image";
 import Link from "next/link";
+import { Product } from "@prisma/client";
 
-export const columns: ColumnDef<ProductType>[] = [
+export const columns: ColumnDef<Product>[] = [
   {
     id: "select",
     header: ({ table }) => {
@@ -73,8 +74,20 @@ export const columns: ColumnDef<ProductType>[] = [
     },
   },
   {
-    header: "Product ID",
-    accessorKey: "id",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant={"ghost"}
+          onClick={() => {
+            column.toggleSorting(column.getIsSorted() === "asc");
+          }}
+        >
+          Product Category
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    accessorKey: "category",
   },
   {
     header: ({ column }) => {
@@ -127,6 +140,10 @@ export const columns: ColumnDef<ProductType>[] = [
       const quantity = row.getValue("quantity") as number;
       return <span className="text-stone-500">{quantity} in stock</span>;
     },
+  },
+  {
+    header: "",
+    id: "id",
   },
   {
     header: "Actions",

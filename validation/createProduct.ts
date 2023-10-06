@@ -26,6 +26,9 @@ export const createProductSchema = z.object({
       message: "Invalid 'weightMeasurement' value",
     }),
   productStatus: z.string({ required_error: "'productStatus' is required" }),
+  category: z
+    .string({ required_error: "'category' is required" })
+    .nonempty("'category' cannot be empty"),
 });
 
 export type createProductSchemaType = z.infer<typeof createProductSchema>;
