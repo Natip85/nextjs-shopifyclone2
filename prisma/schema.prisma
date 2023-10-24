@@ -20,7 +20,7 @@ model User {
 
   accounts Account[]
   reviews Review[]
-   orders Order[]
+  orders Order[]
 }
 
 model Account {
