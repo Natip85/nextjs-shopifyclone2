@@ -48,13 +48,13 @@ model Product {
   description String
   price Float
   quantity Int
-  shipping Boolean
+  shipping Boolean?
   weight Int?
-  weightMeasurement String
+  weightMeasurement String?
   productStatus String
-  category String
+  category String?
   createdDate     DateTime  @default(now())
-  images Json[] 
+  images Json[]
   reviews Review[]
 }
 

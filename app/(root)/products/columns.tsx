@@ -1,6 +1,5 @@
 "use client";
 import { Button } from "@/src/@/components/ui/button";
-import { ProductType } from "@/src/components/forms/AddProductForm";
 import { ColumnDef } from "@tanstack/react-table";
 
 import {
@@ -14,6 +13,12 @@ import { Checkbox } from "@/src/@/components/ui/checkbox";
 import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@prisma/client";
+import { useCallback } from "react";
+import toast from "react-hot-toast";
+import { deleteObject, getStorage, ref } from "firebase/storage";
+import firebaseApp from "@/src/libs/firebase";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 
 export const columns: ColumnDef<Product>[] = [
   {
@@ -47,18 +52,23 @@ export const columns: ColumnDef<Product>[] = [
     cell: ({ row }) => {
       const product = row.original;
       const productId = product.id;
-      const allImages: string[] = row.getValue("images");
+      const allImages: any[] = row.getValue("images");
+
       return (
         <Link href={`/products/${productId}`}>
-          <Image
-            src={
-              // allImages[0] ||
-              "https://psediting.websites.co.in/obaju-turquoise/img/product-placeholder.png"
-            }
-            alt="prod img"
-            width={50}
-            height={50}
-          />
+          <div className="w-[60px] h-[60px] overflow-hidden relative aspect-video">
+            <Image
+              src={
+                allImages[0].image ||
+                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSTv2rNkxu82jwemyb3lSLkmbyLCqflQDMJPA&usqp=CAU"
+              }
+              alt="prod img"
+              priority
+              fill
+              sizes="20"
+              className="object-contain"
+            />
+          </div>
         </Link>
       );
     },
@@ -70,7 +80,14 @@ export const columns: ColumnDef<Product>[] = [
       const product = row.original;
       const productId = product.id;
       const allTitles: string = row.getValue("title");
-      return <Link href={`/products/${productId}`}>{allTitles}</Link>;
+      return (
+        <Link
+          href={`/products/${productId}`}
+          className="font-bold hover:underline "
+        >
+          {allTitles}
+        </Link>
+      );
     },
   },
   {
@@ -151,7 +168,47 @@ export const columns: ColumnDef<Product>[] = [
     cell: ({ row }) => {
       const product = row.original;
       const productId = product.id;
+      const storage = getStorage(firebaseApp);
 
+      const handleDelete = async (id: string, images: any[]) => {
+        const confirmed = window.confirm(
+          "Are you sure you want to proceed? confirming will delete all unsaved changes."
+        );
+
+        if (confirmed) {
+          toast("Deleting product, please wait.");
+          try {
+            for (const item of images) {
+              if (item.image) {
+                const imageRef = ref(storage, item.image);
+                await deleteObject(imageRef);
+                console.log("image deleted", item.image);
+              }
+            }
+          } catch (error) {
+            console.error("An error occurred:", error);
+          }
+          const res = await axios
+            .delete(`/api/product/${id}`)
+            .then((res) => {
+              toast.success("Product deleted");
+              window.location.reload();
+            })
+            .catch((error: any) => {
+              toast.error("Failed to delete product");
+              console.log(error);
+            });
+        }
+      };
+      const handleCopyID = () => {
+        try {
+          navigator.clipboard.writeText(productId.toString());
+          toast.success("ID copied to clipboard");
+        } catch (error) {
+          toast.error("Failed to copy ID");
+          console.error("An error occurred:", error);
+        }
+      };
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -161,18 +218,24 @@ export const columns: ColumnDef<Product>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem
-              onClick={() => {
-                navigator.clipboard.writeText(productId.toString());
-              }}
+              onClick={handleCopyID}
+              className="flex justify-center items-center cursor-pointer"
             >
-              Copy product ID
+              Copy ID
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {}}>Delete</DropdownMenuItem>
             <DropdownMenuItem
-              className="flex justify-start items-center"
-              onClick={() => {}}
+              onClick={() => handleDelete(productId, product.images)}
+              className="flex justify-center items-center cursor-pointer"
             >
-              <EyeIcon />
+              Delete
+            </DropdownMenuItem>
+            <DropdownMenuItem className="flex justify-center items-center">
+              <Link
+                href={`/products/${productId}`}
+                className="w-full flex justify-center items-center"
+              >
+                <EyeIcon />
+              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -19,16 +19,10 @@ export const createProductSchema = z.object({
     .string()
     .transform((v) => (v ? Number(v) : 0))
     .optional(),
-  shipping: z.boolean().optional(),
-  weightMeasurement: z
-    .string({ required_error: "'weightMeasurement' is required" })
-    .refine((value) => allowedWeightMeasurements.includes(value), {
-      message: "Invalid 'weightMeasurement' value",
-    }),
-  productStatus: z.string({ required_error: "'productStatus' is required" }),
-  category: z
-    .string({ required_error: "'category' is required" })
-    .nonempty("'category' cannot be empty"),
+  shipping: z.boolean().default(false).optional(),
+  weightMeasurement: z.string().optional(),
+  productStatus: z.string().default("draft"),
+  category: z.string().optional(),
 });
 
 export type createProductSchemaType = z.infer<typeof createProductSchema>;

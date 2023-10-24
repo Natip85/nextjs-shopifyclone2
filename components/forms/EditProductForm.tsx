@@ -1,43 +1,49 @@
 "use client";
+import React, { useCallback, useEffect, useState } from "react";
+import { Textarea } from "@/src/@/components/ui/textarea";
 import { Button } from "@/src/@/components/ui/button";
 import { Input } from "@/src/@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/@/components/ui/select";
-import { Textarea } from "@/src/@/components/ui/textarea";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import axios from "axios";
+import toast from "react-hot-toast";
 import {
   createProductSchema,
   createProductSchemaType,
-} from "@/src/validation/createProduct";
+} from "@/src/libs/validations/createProduct";
 import { zodResolver } from "@hookform/resolvers/zod";
+import CustomSelect from "../inputs/CustomSelect";
+import SelectImgVariant from "../inputs/SelectImgVariant";
+import firebaseApp from "@/src/libs/firebase";
+import {
+  deleteObject,
+  getDownloadURL,
+  getStorage,
+  ref,
+  uploadBytesResumable,
+} from "firebase/storage";
+import {
+  categories,
+  weightOptions,
+  statusOptions,
+} from "@/src/constants/Categories";
 import { Product } from "@prisma/client";
-import axios from "axios";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import React, { useState } from "react";
-import { useDropzone } from "react-dropzone";
-import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
-import { categories } from "@/src/constants/Categories";
+
 export interface EditProductFormProps {
   product: Product;
 }
+
 const EditProductForm = ({ product }: EditProductFormProps) => {
   const router = useRouter();
   const [shipping, setShipping] = useState(product.shipping);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-
-  const { acceptedFiles, getRootProps, getInputProps } = useDropzone({
-    accept: { "image/*": [".jpeg", ".png", ".jpg", ".webp"] },
-    onDrop: (acceptedFiles) => {
-      setUploadedFiles((prevImages) => [...prevImages, ...acceptedFiles]);
-    },
-  });
+  const [isProductCreated, setIsProductCreated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [images, setImages] = useState<any[]>(product.images);
+  const [newImages, setNewImages] = useState<any[]>([]);
+  const storage = getStorage(firebaseApp);
+  console.log("EDIT IMAGES>>>", images);
+  console.log("EDIT NEW IMAGES>>>", newImages);
 
   const {
     register,
@@ -45,6 +51,7 @@ const EditProductForm = ({ product }: EditProductFormProps) => {
     setValue,
     watch,
     reset,
+    control,
     formState: { errors },
   } = useForm<createProductSchemaType>({
     resolver: zodResolver(createProductSchema),
@@ -54,34 +61,157 @@ const EditProductForm = ({ product }: EditProductFormProps) => {
       price: product.price,
       quantity: product.quantity,
       weight: product.weight !== null ? product.weight : undefined,
-      shipping: shipping,
-      weightMeasurement: product.weightMeasurement,
+      shipping: product.shipping !== null ? product.shipping : undefined,
+      weightMeasurement: product.weightMeasurement ?? undefined,
       productStatus: product.productStatus,
-      category: product.category,
+      category: product.category ?? undefined,
     },
   });
-  const onSubmit = async (data: createProductSchemaType) => {
-    console.log(data);
-    const productData = { ...data, images: uploadedFiles, id: product.id };
 
+  const onSubmit = async (data: any) => {
+    console.log("EDIT DATA", data);
+    setIsLoading(true);
+    let uploadedImages: any[] = [];
+    const productData = { ...data, images: newImages[0]?.image };
+    console.log("EDIT PROD DATA>>>>", productData);
+    if (newImages.length > 0) {
+      const handleImageUploads = async () => {
+        toast("Editing product. This might take a while...", {
+          icon: "🔃",
+        });
+        try {
+          for (const item of productData.images) {
+            console.log("EDIT ITEM>>>>", item);
+
+            if (item) {
+              const fileName = new Date().getTime() + "-" + item.name;
+              const storage = getStorage(firebaseApp);
+              const storageRef = ref(storage, `products2/${fileName}`);
+              const uploadTask = uploadBytesResumable(storageRef, item);
+
+              await new Promise<void>((resolve, reject) => {
+                uploadTask.on(
+                  "state_changed",
+                  (snapshot) => {
+                    const progress =
+                      (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    console.log("Upload is " + progress + "% done");
+                    switch (snapshot.state) {
+                      case "paused":
+                        break;
+                      case "running":
+                        break;
+                    }
+                  },
+                  (error) => {
+                    console.log("Error uploading image", error);
+                    reject(error);
+                  },
+                  () => {
+                    getDownloadURL(uploadTask.snapshot.ref)
+                      .then((downloadURL) => {
+                        uploadedImages.push({
+                          ...item,
+                          image: downloadURL,
+                        });
+
+                        console.log("File available at", downloadURL);
+                        resolve();
+                      })
+                      .catch((error) => {
+                        console.log("Error getting download URL", error);
+                        reject(error);
+                      });
+                  }
+                );
+              });
+            }
+          }
+        } catch (error) {
+          setIsLoading(false);
+          console.log("Error handling image uploads", error);
+          return toast.error("An error occurred while handling image uploads");
+        }
+      };
+      await handleImageUploads();
+    }
+
+    const finalData = {
+      ...productData,
+      images: [...images, ...uploadedImages],
+      id: product.id,
+    };
+    console.log("EDIT FINAL DATA", finalData);
     axios
-      .put("/api/product", productData)
+      .put("/api/product", finalData)
       .then(() => {
         toast.success("Product edited");
+        setIsProductCreated(true);
         router.refresh();
+        router.push("/products");
       })
       .catch((error) => {
-        toast.error("Something went wrong when editing the product");
+        console.error("Error making the request:", error);
+        toast.error("Something went wrong when editing a product");
       })
-      .finally(() => {});
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
-  const handleDiscard = () => {
+
+  const addImageToState = useCallback((value: any) => {
+    console.log("EDIT IMG VAL>>>>", value);
+
+    setNewImages((prev) => {
+      if (!prev) {
+        return [value];
+      }
+      return [...prev, value];
+    });
+  }, []);
+
+  const removeImageFromState = useCallback((value: any) => {
+    setImages((prev) => {
+      if (prev) {
+        const filteredImages = prev.filter((item) => item.image.name !== value);
+        return filteredImages;
+      }
+      return prev;
+    });
+  }, []);
+
+  const handleDelete = async (id: string, images: any[]) => {
     const confirmed = window.confirm(
       "Are you sure you want to proceed? confirming will delete all unsaved changes."
     );
 
-    if (confirmed) router.back();
+    if (confirmed) {
+      toast("Deleting product, please wait.");
+      try {
+        for (const item of images) {
+          if (item.image) {
+            const imageRef = ref(storage, item.image);
+            await deleteObject(imageRef);
+            console.log("image deleted", item.image);
+          }
+        }
+      } catch (error) {
+        console.error("An error occurred:", error);
+      }
+      const res = await axios
+        .delete(`/api/product/${id}`)
+        .then((res) => {
+          toast.success("Product deleted");
+          router.refresh();
+          router.push("/products");
+        })
+        .catch((error: any) => {
+          toast.error("Failed to delete product");
+          console.log(error);
+        });
+    }
   };
+
   return (
     <>
       <div className="flex flex-col md:flex-row">
@@ -89,16 +219,18 @@ const EditProductForm = ({ product }: EditProductFormProps) => {
           <div className="bg-white p-3 rounded-md flex flex-col w-full shadow-lg mb-5 border border-stone-300">
             <label htmlFor="title" className="text-sm text-black">
               Title
+              <Input
+                id="title"
+                {...register("title")}
+                className="my-2 rounded-md text-sm hover:bg-slate-100 bg-white"
+              />
             </label>
-            <Input
-              id="title"
-              {...register("title")}
-              className="my-2 rounded-md text-sm hover:bg-slate-100 bg-white"
-            />
-            <label htmlFor="" className="text-sm text-black">
+
+            <label htmlFor="description" className="text-sm text-black">
               Description
             </label>
             <Textarea
+              id="description"
               {...register("description")}
               cols={10}
               rows={10}
@@ -106,59 +238,51 @@ const EditProductForm = ({ product }: EditProductFormProps) => {
             />
           </div>
           <div className="bg-white p-3 rounded-md flex flex-col w-full shadow-lg mb-5 border border-stone-300">
-            <label htmlFor="" className="text-sm text-black">
-              Media
-            </label>
-            {uploadedFiles.length < 1 ? (
-              <div className="hover:bg-slate-100 focus:bg-slate-100 focus:border-blue-800 focus:border-[3px] border-black border-dashed p-3 mt-3 rounded-lg border-[1px] w-full flex flex-col justify-center items-center cursor-pointer">
+            <span className="text-sm text-black mb-5">Media</span>
+
+            <SelectImgVariant
+              addImageToState={addImageToState}
+              removeImageFromState={removeImageFromState}
+              isProductCreated={isProductCreated}
+              item={images}
+            />
+            <div className="grid grid-cols-4 gap-4 col-span-2">
+              {images.map((img, i) => (
                 <div
-                  {...getRootProps()}
-                  className="w-full flex flex-col items-center justify-center p-2"
+                  key={i}
+                  className={`border border-slate-300 rounded-md object-fit overflow-hidden relative aspect-video ${
+                    i === 0 ? "row-span-2 col-span-2" : ""
+                  }`}
                 >
-                  <input {...getInputProps()} />
-                  <Button
-                    type="button"
-                    className="bg-slate-100 text-black hover:bg-white"
-                  >
-                    Upload image
-                  </Button>
-                  <p className="text-slate-700 text-xs mt-3">
-                    Drag & drop images here, or click to select images
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="hover:bg-slate-100 focus:bg-slate-100 focus:border-blue-800 focus:border-[3px] border-black border-dashed p-3 mt-3 rounded-lg border-[1px] w-full flex  flex-wrap justify-around items-center cursor-pointer">
-                {uploadedFiles.map((item, i) => (
                   <Image
-                    key={i}
-                    src={`${URL.createObjectURL(item)}`}
-                    alt="product image"
-                    width={100}
-                    height={100}
-                    className="border p-2 m-2 rounded-lg"
+                    src={img.image}
+                    alt="prod img"
+                    priority
+                    fill
+                    sizes="20"
+                    className="object-fit w-[100%]"
                   />
-                ))}
-                <div
-                  {...getRootProps()}
-                  className=" w-[100px] h-[100px] rounded-lg border border-dashed border-black flex justify-center items-center"
-                >
-                  <input {...getInputProps()} />
-                  <Button className="bg-slate-100 text-black hover:bg-white">
-                    Add
-                  </Button>
+                  <div className="w-[70px] absolute top-3">
+                    <button
+                      onClick={() => {
+                        // setFile([]);
+                        // removeImageFromState(item);
+                      }}
+                    >
+                      cancel
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
           <div className="bg-white p-3 rounded-md flex flex-col w-full shadow-lg mb-5 border border-stone-300">
-            <label htmlFor="" className="text-sm mb-5 text-black">
-              Pricing
-            </label>
-            <label htmlFor="" className="text-xs text-black">
+            <span className="text-sm mb-5 text-black">Pricing</span>
+            <label htmlFor="price" className="text-xs text-black">
               Price
             </label>
             <Input
+              id="price"
               {...register("price")}
               type="number"
               placeholder="$ 0.00"
@@ -166,13 +290,12 @@ const EditProductForm = ({ product }: EditProductFormProps) => {
             />
           </div>
           <div className="bg-white p-3 rounded-md flex flex-col w-full shadow-lg mb-5 border border-stone-300">
-            <label htmlFor="" className="text-sm mb-5 text-black">
-              Inventory
-            </label>
-            <label htmlFor="" className="text-xs text-black">
+            <span className="text-sm mb-5 text-black">Inventory</span>
+            <label htmlFor="quantity" className="text-xs text-black">
               Quantity
             </label>
             <Input
+              id="quantity"
               {...register("quantity")}
               type="number"
               placeholder="0"
@@ -180,19 +303,16 @@ const EditProductForm = ({ product }: EditProductFormProps) => {
             />
           </div>
           <div className="bg-white p-3 rounded-md flex flex-col w-full shadow-lg border border-stone-300">
-            <label htmlFor="" className="text-sm mb-5 text-black">
-              Shipping
-            </label>
+            <span className="text-sm mb-5 text-black">Shipping</span>
             <label
               htmlFor="shipping"
               className="text-xs flex items-center text-slate-800 cursor-pointer"
             >
               <input
                 {...register("shipping")}
-                checked={shipping}
                 type="checkbox"
                 onChange={() => setShipping(!shipping)}
-                className="mr-2 hover:cursor-pointer"
+                className="mr-2"
                 id="shipping"
               />
               This product requires shipping
@@ -200,41 +320,24 @@ const EditProductForm = ({ product }: EditProductFormProps) => {
 
             {shipping && (
               <>
-                <label htmlFor="" className="text-xs text-slate-800 mt-5">
+                <label htmlFor="weight" className="text-xs text-slate-800 mt-5">
                   Weight
                 </label>
                 <div className="flex items-center">
                   <Input
+                    id="weight"
                     {...register("weight")}
                     type="number"
                     placeholder="0"
                     className="sm:w-fit my-2 rounded-md hover:bg-slate-100"
                   />
                   <div className="ml-5">
-                    <Select
-                      {...register("weightMeasurement")}
-                      onValueChange={(e) => setValue("weightMeasurement", e)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={product.weightMeasurement} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem className="cursor-pointer" value="lb">
-                            lb
-                          </SelectItem>
-                          <SelectItem className="cursor-pointer" value="oz">
-                            oz
-                          </SelectItem>
-                          <SelectItem className="cursor-pointer" value="kg">
-                            kg
-                          </SelectItem>
-                          <SelectItem className="cursor-pointer" value="g">
-                            g
-                          </SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
+                    <CustomSelect
+                      name="weightMeasurement"
+                      options={weightOptions}
+                      placeholder="Select a weight"
+                      control={control}
+                    />
                   </div>
                 </div>
               </>
@@ -243,73 +346,42 @@ const EditProductForm = ({ product }: EditProductFormProps) => {
         </div>
         <div className="mt-5 sm:mt-5 sm:ml-0 md:mt-0 min-w-[250px]">
           <div className="bg-white p-3 rounded-md flex flex-col shadow-lg border border-stone-300">
-            <label htmlFor="" className="text-black">
-              Status
-            </label>
+            <span className="text-black">Status</span>
             <div className="mt-5">
-              <Select
-                {...register("productStatus")}
-                defaultValue={product.productStatus}
-                onValueChange={(e) => setValue("productStatus", e)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={product.productStatus} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="active" className="cursor-pointer">
-                      Active
-                    </SelectItem>
-                    <SelectItem value="draft" className="cursor-pointer">
-                      Draft
-                    </SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <CustomSelect
+                name="productStatus"
+                options={statusOptions}
+                placeholder="Select a status"
+                control={control}
+              />
             </div>
           </div>
           <div className="bg-white mt-5 p-3 rounded-md flex flex-col shadow-lg border border-stone-300">
-            <label htmlFor="" className="text-black">
-              Categories
-            </label>
+            <span className="text-black">Categories</span>
             <div className="mt-5">
-              <Select
-                {...register("category")}
-                onValueChange={(e) => setValue("category", e)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={product.category} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {categories.map((category) => (
-                      <SelectItem
-                        key={category.label}
-                        value={category.label}
-                        className="cursor-pointer"
-                      >
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <CustomSelect
+                name="category"
+                options={categories}
+                placeholder="Select a category"
+                control={control}
+              />
             </div>
           </div>
         </div>
       </div>
-      <div className="mt-5">
+      <div className="mt-5 flex justify-end">
         <Button
-          onClick={handleDiscard}
-          className="mr-2 h-fit text-xs text-white py-1 bg-black"
+          disabled={isLoading}
+          onClick={handleSubmit(onSubmit)}
+          className="h-fit text-xs text-white py-1 bg-black mr-2"
         >
-          Discard
+          {isLoading ? "Loading..." : "Update"}
         </Button>
         <Button
-          onClick={handleSubmit(onSubmit)}
-          className="h-fit text-xs text-white py-1 bg-black"
+          onClick={() => handleDelete(product.id, product.images)}
+          className="h-fit text-xs text-white py-1 bg-red-500"
         >
-          Save
+          Delete
         </Button>
       </div>
     </>

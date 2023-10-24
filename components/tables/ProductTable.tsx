@@ -70,10 +70,11 @@ function ProductTable<TData, TValue>({
       {/* input */}
       <div className="flex flex-col py-4 sm:flex-row">
         <Input
+          id="prod-table"
           placeholder="Filter Products"
-          value={(table.getColumn("id")?.getFilterValue() as string) || ""}
+          value={(table.getColumn("title")?.getFilterValue() as string) || ""}
           onChange={(e) => {
-            table.getColumn("id")?.setFilterValue(e.target.value);
+            table.getColumn("title")?.setFilterValue(e.target.value);
           }}
           className="max-w-sm mb-3"
         />
@@ -116,8 +117,8 @@ function ProductTable<TData, TValue>({
         </div>
       </div>
       {/* table */}
-      <div className="rounded-lg border max-w-[350px] sm:max-w-full md:max-w-full">
-        <Table>
+      <div className="rounded-lg max-w-[360px] sm:max-w-full md:max-w-full">
+        <Table className="bg-white rounded-lg shadow-lg">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => {
               return (
