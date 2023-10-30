@@ -13,12 +13,10 @@ import { Checkbox } from "@/src/@/components/ui/checkbox";
 import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@prisma/client";
-import { useCallback } from "react";
 import toast from "react-hot-toast";
 import { deleteObject, getStorage, ref } from "firebase/storage";
 import firebaseApp from "@/src/libs/firebase";
 import axios from "axios";
-import { useRouter } from "next/navigation";
 
 export const columns: ColumnDef<Product>[] = [
   {

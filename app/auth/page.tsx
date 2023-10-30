@@ -4,7 +4,7 @@ import React from "react";
 
 type Props = {};
 
-const Home = (props: Props) => {
+const Auth = (props: Props) => {
   return (
     <div className="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-100">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -21,4 +21,4 @@ const Home = (props: Props) => {
   );
 };
 
-export default Home;
+export default Auth;

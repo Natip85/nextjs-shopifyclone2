@@ -47,7 +47,6 @@ const AddProductForm = () => {
   const [isProductCreated, setIsProductCreated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState<any[]>([]);
-  console.log("ADD IMAGES>>>>", images);
 
   const {
     register,

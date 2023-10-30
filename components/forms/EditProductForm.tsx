@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { Textarea } from "@/src/@/components/ui/textarea";
 import { Button } from "@/src/@/components/ui/button";
 import { Input } from "@/src/@/components/ui/input";

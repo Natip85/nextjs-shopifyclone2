@@ -24,4 +24,9 @@ export const sidebarLinks = [
     route: "/analytics",
     label: "Analytics",
   },
+  {
+    imgURL: "/assets/store.svg",
+    route: "/store",
+    label: "Live Store",
+  },
 ];

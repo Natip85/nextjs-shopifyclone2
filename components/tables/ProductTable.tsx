@@ -116,8 +116,12 @@ function ProductTable<TData, TValue>({
           </DropdownMenu>
         </div>
       </div>
+      <div className="flex-1 text-sm text-muted-foreground">
+        {table.getFilteredSelectedRowModel().rows.length} of{" "}
+        {table.getFilteredRowModel().rows.length} row(s) selected
+      </div>
       {/* table */}
-      <div className="rounded-lg max-w-[360px] sm:max-w-full md:max-w-full">
+      <div className="rounded-lg max-w-[360px] sm:max-w-full md:max-w-full pt-3">
         <Table className="bg-white rounded-lg shadow-lg">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => {
@@ -181,10 +185,6 @@ function ProductTable<TData, TValue>({
         >
           Next
         </Button>
-      </div>
-      <div className="flex-1 text-sm text-muted-foreground">
-        {table.getFilteredSelectedRowModel().rows.length} of{" "}
-        {table.getFilteredRowModel().rows.length} row(s) selected
       </div>
     </div>
   );
